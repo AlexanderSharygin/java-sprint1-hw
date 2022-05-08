@@ -3,62 +3,34 @@ import java.util.Scanner;
 
 
 public class Main {
+    private static StepTracker stepTracker;
+    private static Scanner scanner;
+
     public static void main(String[] args) {
         int defaultStepsTarget = 10000;
-        StepTracker stepTracker = new StepTracker(defaultStepsTarget);
-        Scanner scanner = new Scanner(System.in);
+        stepTracker = new StepTracker(defaultStepsTarget);
+        scanner = new Scanner(System.in);
         while (true) {
             printMenu();
             int command = scanner.nextInt();
             if (command == 1) {
-                System.out.println("Выберите месяц (0-11):");
-                int monthNumber = scanner.nextInt();
-                System.out.println("Выберите день (1-30):");
-                int dayNumber = scanner.nextInt();
-                System.out.println("Вы прошли в день " + dayNumber + " месяца " + monthNumber + ": " +
-                        stepTracker.monthData(monthNumber).getDailyData(dayNumber - 1) + " шагов.");
-                System.out.println("Выберите новое количество пройденных шагов:");
+                int monthNumber = selectMonthNumber();
+                int dayNumber = selectDayNumber();
+                printDailyData(monthNumber, dayNumber);
+                System.out.println("Введите новое количество пройденных шагов:");
                 int stepCount = scanner.nextInt();
-                if (stepCount < 0) {
-                    printErrorMessage();
-                } else {
-                    stepTracker.monthData(monthNumber).setDailyData(dayNumber - 1, stepCount);
-                    System.out.println("Количество шагов изменено на: " +
-                            stepTracker.monthData(monthNumber).getDailyData(dayNumber - 1) + " шагов.");
-                }
+                setDailyData(monthNumber, dayNumber, stepCount);
             } else if (command == 2) {
-                System.out.println("Выберите месяц (0-11):");
-                int monthNumber = scanner.nextInt();
-                int[] stepsPerDays = stepTracker.monthData(monthNumber).getAllDaysData();
-                System.out.println("Статистика пройденных шагов по дням месяца " + monthNumber + ":");
-                for (int i = 0; i < stepsPerDays.length; i++) {
-                    System.out.println(i + 1 + " День: " + stepsPerDays[i]);
-                }
-                int monthlySteps = stepTracker.monthData(monthNumber).getSumOfSteps();
-                System.out.println("Общее количество шагов за месяц: " + monthlySteps);
-                System.out.println("Среднее количество шагов за месяц: " + stepTracker.monthData(monthNumber).getAvgOfSteps());
-                System.out.println("Пройденная дистанция за месяц: " + Converter.convertStepsToDistance(monthlySteps));
-                System.out.println("Сожжено килокаллорий за месяц: " + Converter.convertStepsToKiloCalories(monthlySteps));
-                if (monthlySteps > 0) {
-                    System.out.println("Максимальное количество шагов за месяц: "
-                            + stepTracker.monthData(monthNumber).getMaxDailySteps()[1] +
-                            " пройдено в день " + +stepTracker.monthData(monthNumber).getMaxDailySteps()[0]);
-                    printLongestSeries(stepTracker.monthData(monthNumber).getLongestSeries());
-                } else {
-                    System.out.println("Вы не прошли ни шага в этом месяце");
-                }
+                int monthNumber = selectMonthNumber();
+                printStatistic(monthNumber);
             } else if (command == 3) {
                 System.out.println("Текущая цель: " + stepTracker.getStepTargetCount() + " шагов в день.");
                 System.out.println("Введите новое количество шагов (значение должно быть положительным):");
                 int stepTargetCount = scanner.nextInt();
-                if (stepTargetCount < 0) {
-                    printErrorMessage();
-                } else {
-                    stepTracker.setStepTargetCount(stepTargetCount);
-                    System.out.println("Новая цель: " + stepTracker.getStepTargetCount() + " шагов в день!");
-                }
+                setNewTarget(stepTargetCount);
             } else if (command == 4) {
                 System.out.println("Программа завершена.");
+                scanner.close();
                 break;
             } else {
                 System.out.println("Извините, такой команды пока нет.");
@@ -86,5 +58,60 @@ public class Main {
                     "Это были дни с: " + (longestSessionDays.get(0) + 1) +
                     " по " + (longestSessionDays.get(longestSessionDays.size() - 1) + 1));
         }
+    }
+
+    public static void printStatistic(int monthNumber) {
+        MonthData monthData = stepTracker.monthData(monthNumber);
+        int[] stepsPerDays = monthData.getAllDaysData();
+        System.out.println("Статистика пройденных шагов по дням месяца " + monthNumber + ":");
+        for (int i = 0; i < stepsPerDays.length; i++) {
+            System.out.println(i + 1 + " День: " + stepsPerDays[i]);
+        }
+        int monthlySteps = monthData.getSumOfSteps();
+        System.out.println("Общее количество шагов за месяц: " + monthlySteps);
+        System.out.println("Среднее количество шагов за месяц: " + monthData.getAvgOfSteps());
+        System.out.println("Пройденная дистанция за месяц: " + Converter.convertStepsToKilometers(monthlySteps, 0.75));
+        System.out.println("Сожжено килокаллорий за месяц: " + Converter.convertStepsToKiloCalories(monthlySteps, 50));
+        if (monthlySteps > 0) {
+            System.out.println("Максимальное количество шагов за месяц: " + monthData.getMaxDailySteps()[1] +
+                    " пройдено в день " + monthData.getMaxDailySteps()[0]);
+            printLongestSeries(monthData.getLongestSeries());
+        } else {
+            System.out.println("Вы не прошли ни шага в этом месяце");
+        }
+    }
+
+    public static void setNewTarget(int stepTargetCount) {
+        if (stepTargetCount < 0) {
+            printErrorMessage();
+        } else {
+            stepTracker.setStepTargetCount(stepTargetCount);
+            System.out.println("Новая цель: " + stepTracker.getStepTargetCount() + " шагов в день!");
+        }
+    }
+
+    public static void printDailyData(int monthNumber, int dayNumber) {
+        System.out.println("Вы прошли в день " + dayNumber + " месяца " + monthNumber + ": " +
+                stepTracker.monthData(monthNumber).getDailyData(dayNumber - 1) + " шагов.");
+    }
+
+    public static void setDailyData(int monthNumber, int dayNumber, int stepCount) {
+        if (stepCount < 0) {
+            printErrorMessage();
+        } else {
+            stepTracker.monthData(monthNumber).setDailyData(dayNumber - 1, stepCount);
+            System.out.println("Количество шагов изменено на: " +
+                    stepTracker.monthData(monthNumber).getDailyData(dayNumber - 1) + " шагов.");
+        }
+    }
+
+    public static int selectMonthNumber() {
+        System.out.println("Выберите месяц (0-11):");
+        return scanner.nextInt();
+    }
+
+    public static int selectDayNumber() {
+        System.out.println("Выберите день (1-30):");
+        return scanner.nextInt();
     }
 }

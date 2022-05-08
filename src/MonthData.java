@@ -58,29 +58,22 @@ public class MonthData {
             List<Integer> tempSeriesDays = new ArrayList<>();
             int tempSeriesSteps = 0;
             if (daysData[i] >= stepTargetCount) {
-                tempSeriesDays.add(i);
-                tempSeriesSteps += daysData[i];
-                for (int j = i + 1; j < daysData.length; j++) {
+                for (int j = i; j < daysData.length; j++) {
                     if (daysData[j] >= stepTargetCount) {
                         tempSeriesDays.add(j);
                         tempSeriesSteps += daysData[j];
-                    }
-                    if (daysData[j] < stepTargetCount || j == daysData.length - 1) {
                         i = j;
-                        if (longestSeriesDays.size() < tempSeriesDays.size() && tempSeriesDays.size() > 1) {
-                            longestSeriesDays.clear();
-                            longestSeriesDays.addAll(tempSeriesDays);
-                            longestSeriesSteps = tempSeriesSteps;
-                        } else if (longestSeriesDays.size() == tempSeriesDays.size()) {
-                            if (tempSeriesSteps > longestSeriesSteps) {
-                                longestSeriesDays.clear();
-                                longestSeriesDays.addAll(tempSeriesDays);
-                                longestSeriesSteps = tempSeriesSteps;
-                            }
-                        }
-                        tempSeriesDays.clear();
+                    } else {
                         break;
                     }
+                }
+            }
+            if (tempSeriesDays.size() > 1) {
+                if (tempSeriesDays.size() > longestSeriesDays.size() ||
+                        (tempSeriesDays.size() == longestSeriesDays.size() && (tempSeriesSteps > longestSeriesSteps))) {
+                    longestSeriesDays.clear();
+                    longestSeriesDays.addAll(tempSeriesDays);
+                    longestSeriesSteps = tempSeriesSteps;
                 }
             }
         }
